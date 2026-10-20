@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Angkor DC - Admin Dashboard</title>
+    <title>Angkor DC - អេតមីន (Admin Dashboard)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -14,6 +14,7 @@
 <body class="bg-[#0b0b0b] text-white">
 
     <div class="admin-frame pb-24">
+        <!-- TOP HEADER -->
         <header class="sticky top-0 z-50 bg-[#121212]/95 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-zinc-800">
             <div class="flex items-center space-x-2">
                 <span class="text-amber-500 text-xl"><i class="fa-solid fa-gauge-high"></i></span>
@@ -22,8 +23,9 @@
             <span class="text-xs bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full font-semibold border border-amber-500/30">Administrator</span>
         </header>
 
+        <!-- MAIN CONTAINER -->
         <main class="p-4 space-y-5">
-            <!-- STATS -->
+            <!-- OVERVIEW STATS -->
             <div class="grid grid-cols-2 gap-3">
                 <div class="bg-zinc-900 border border-zinc-800 p-3 rounded-2xl text-center">
                     <p class="text-[10px] text-zinc-400 mb-1">ចំនួនអ្នកចុះឈ្មោះសរុប</p>
@@ -48,7 +50,10 @@
 
             <!-- REGISTERED USERS BY PHONE NUMBER -->
             <div class="pt-2">
-                <h2 class="text-sm font-bold text-zinc-200 mb-3">អតិថិជនចុះឈ្មោះតាមលេខទូរសព្ទ</h2>
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-sm font-bold text-zinc-200">អតិថិជនចុះឈ្មោះតាមលេខទូរសព្ទ</h2>
+                    <span id="users-badge-count" class="text-xs bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full font-bold">0 នាក់</span>
+                </div>
                 <div id="admin-users-list" class="space-y-2.5"></div>
             </div>
         </main>
@@ -62,58 +67,95 @@
             <form onsubmit="saveMovie(event)" class="space-y-3">
                 <div>
                     <label class="block text-[11px] text-zinc-400 mb-1">ឈ្មោះរឿង (Title)</label>
-                    <input type="text" id="input-title" required class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white text-xs">
+                    <input type="text" id="input-title" required class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white text-xs" placeholder="ឧ. ក្រោមម្លប់ស្បូវ">
                 </div>
                 <div>
                     <label class="block text-[11px] text-zinc-400 mb-1">តម្លៃ ($)</label>
                     <input type="number" id="input-price" step="0.1" value="1.60" required class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white text-xs">
                 </div>
                 <div>
-                    <label class="block text-[11px] text-zinc-400 mb-1">តំណរូបភាព (Image URL)</label>
-                    <input type="url" id="input-image" required class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white text-xs">
+                    <label class="block text-[11px] text-zinc-400 mb-1">ជ្រើសរើសរូបភាពពីក្នុងឧបករណ៍</label>
+                    <input type="file" id="input-file" accept="image/*" onchange="handleImageUpload(event)" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2 py-1.5 text-zinc-300 text-[10px] mb-1.5 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-amber-500 file:text-black hover:file:bg-amber-400">
+                </div>
+                <div>
+                    <label class="block text-[11px] text-zinc-400 mb-1">ឬដាក់តំណ URL រូបភាព</label>
+                    <input type="url" id="input-image" required class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white text-xs" placeholder="https://...">
                 </div>
                 <button type="submit" class="w-full bg-amber-500 text-black font-bold py-2 rounded-xl text-xs">រក្សាទុក</button>
             </form>
         </div>
     </div>
 
-    <!-- SCRIPT FOR ADMIN -->
     <script>
-        let adminMovies = JSON.parse(localStorage.getItem('angkor_movies') || '[]');
-        let registeredUsers = JSON.parse(localStorage.getItem('angkor_users') || '[{"phone":"012345678","name":"Mon Samnang","joinedDate":"20/10/2026"}]');
+        let adminMovies = JSON.parse(localStorage.getItem('angkor_movies') || 'null') || [
+            { id: 1, title: "UNDER THE CREEK", category: "New Release", price: 1.60, image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=400&q=80" },
+            { id: 2, title: "KTV: KILLING TIME", category: "New Release", price: 1.60, image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=400&q=80" },
+            { id: 3, title: "LOVE MISSION", category: "New Release", price: 1.60, image: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=400&q=80" }
+        ];
+
+        let registeredUsers = JSON.parse(localStorage.getItem('angkor_users') || '[]');
 
         window.addEventListener('DOMContentLoaded', () => {
             renderAdminMovies();
             renderAdminUsers();
         });
 
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('input-image').value = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
         function renderAdminMovies() {
-            document.getElementById('admin-movie-list').innerHTML = adminMovies.map((m, i) => `
+            const list = document.getElementById('admin-movie-list');
+            if (adminMovies.length === 0) {
+                list.innerHTML = '<p class="text-center text-xs text-zinc-500 py-4">មិនទាន់មានភាពយន្ត</p>';
+                document.getElementById('stat-movies').innerText = '0';
+                return;
+            }
+            list.innerHTML = adminMovies.map((movie, index) => `
                 <div class="bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl flex items-center justify-between">
                     <div class="flex items-center space-x-3">
-                        <img src="${m.image}" class="w-10 h-14 object-cover rounded-lg">
+                        <img src="${movie.image}" class="w-10 h-14 object-cover rounded-lg border border-zinc-800">
                         <div>
-                            <p class="text-xs font-bold text-white">${m.title}</p>
-                            <p class="text-[10px] text-amber-400">$${m.price.toFixed(2)}</p>
+                            <p class="text-xs font-bold text-white truncate max-w-[170px]">${movie.title}</p>
+                            <p class="text-[10px] text-amber-400 font-semibold">$${movie.price.toFixed(2)}</p>
                         </div>
                     </div>
-                    <button onclick="deleteMovie(${i})" class="text-red-400 text-xs px-2 py-1"><i class="fa-solid fa-trash"></i></button>
+                    <button onclick="deleteMovie(${index})" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-2.5 py-1.5 rounded-xl text-xs transition"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `).join('');
             document.getElementById('stat-movies').innerText = adminMovies.length;
         }
 
         function renderAdminUsers() {
-            document.getElementById('admin-users-list').innerHTML = registeredUsers.map((u, i) => `
-                <div class="bg-zinc-900 border border-zinc-800 p-3 rounded-xl flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-bold text-white"><i class="fa-solid fa-phone text-[10px] mr-1 text-zinc-400"></i> ${u.phone}</p>
-                        <p class="text-[10px] text-zinc-400">ឈ្មោះ: ${u.name}</p>
+            const userListContainer = document.getElementById('admin-users-list');
+            if (registeredUsers.length === 0) {
+                userListContainer.innerHTML = '<p class="text-center text-xs text-zinc-500 py-4">មិនទាន់មានអ្នកចុះឈ្មោះ</p>';
+                document.getElementById('stat-users-count').innerText = '0 នាក់';
+                document.getElementById('users-badge-count').innerText = '0 នាក់';
+                return;
+            }
+            userListContainer.innerHTML = registeredUsers.map((user, index) => `
+                <div class="bg-zinc-900 border border-zinc-800 p-3 rounded-2xl flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center font-bold text-xs">${index + 1}</div>
+                        <div>
+                            <p class="text-xs font-bold text-white"><i class="fa-solid fa-phone text-[10px] mr-1 text-zinc-400"></i> ${user.phone}</p>
+                            <p class="text-[10px] text-zinc-400">ឈ្មោះ: ${user.name}</p>
+                        </div>
                     </div>
-                    <span class="text-[10px] text-zinc-500">${u.joinedDate}</span>
+                    <span class="text-[10px] text-zinc-500">${user.joinedDate}</span>
                 </div>
             `).join('');
+
             document.getElementById('stat-users-count').innerText = `${registeredUsers.length} នាក់`;
+            document.getElementById('users-badge-count').innerText = `${registeredUsers.length} នាក់`;
         }
 
         function openAddMovieModal() { document.getElementById('movie-modal').classList.remove('hidden'); }
@@ -125,16 +167,20 @@
             const price = parseFloat(document.getElementById('input-price').value);
             const image = document.getElementById('input-image').value;
 
-            adminMovies.push({ title, price, image });
+            adminMovies.push({ id: Date.now(), title, category: "New Release", price, image });
             localStorage.setItem('angkor_movies', JSON.stringify(adminMovies));
+            
             closeAddMovieModal();
             renderAdminMovies();
+            alert('បានបន្ថែមភាពយន្តដោយជោគជ័យ!');
         }
 
         function deleteMovie(index) {
-            adminMovies.splice(index, 1);
-            localStorage.setItem('angkor_movies', JSON.stringify(adminMovies));
-            renderAdminMovies();
+            if (confirm('តើអ្នកពិតជាចង់លុបភាពយន្តនេះមែនទេ?')) {
+                adminMovies.splice(index, 1);
+                localStorage.setItem('angkor_movies', JSON.stringify(adminMovies));
+                renderAdminMovies();
+            }
         }
     </script>
 </body>
