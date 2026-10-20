@@ -115,6 +115,49 @@
         </nav>
     </div>
 
+    <!-- MOVIE PLAYER MODAL -->
+    <div id="movie-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex flex-col justify-between p-4">
+        <div class="flex justify-between items-center">
+            <button onclick="closeMovieModal()" class="text-zinc-300 hover:text-white bg-zinc-800/80 p-2 rounded-full"><i class="fa-solid fa-arrow-left"></i></button>
+            <h3 id="modal-movie-title" class="font-bold text-xs text-center truncate px-2">Movie Title</h3>
+            <div class="w-8"></div>
+        </div>
+        <div class="flex flex-col items-center justify-center my-auto">
+            <div class="w-full max-w-sm aspect-video bg-black rounded-xl overflow-hidden relative shadow-2xl flex items-center justify-center border border-zinc-800">
+                <div id="locked-overlay" class="absolute inset-0 bg-zinc-950/90 flex flex-col items-center justify-center p-5 text-center">
+                    <span class="text-amber-500 text-3xl mb-2"><i class="fa-solid fa-lock"></i></span>
+                    <h4 class="font-bold text-sm mb-1">ភាពយន្តនេះទាមទារការទូទាត់</h4>
+                    <p class="text-[11px] text-zinc-400 mb-3">តម្លៃទស្សនា: <span id="movie-price-tag" class="text-amber-400 font-bold">$1.60</span></p>
+                    <button onclick="unlockMovie()" class="bg-amber-500 hover:bg-amber-400 text-black font-bold px-5 py-2 rounded-xl shadow transition text-xs">
+                        ទិញនិងមើលឥឡូវនេះ ($1.60)
+                    </button>
+                </div>
+                <video id="movie-video-player" class="w-full h-full object-cover hidden" controls autoplay>
+                    <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+                </video>
+            </div>
+        </div>
+        <div class="text-center pb-2 text-[10px] text-zinc-500">Angkor DC Secure Streaming Player</div>
+    </div>
+
+    <!-- NOTIFICATION & PROFILE MODALS -->
+    <div id="notif-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-xs rounded-2xl p-4 shadow-2xl relative">
+            <button onclick="closeNotifications()" class="absolute top-3 right-3 text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-sm font-bold mb-2 text-amber-500"><i class="fa-regular fa-bell mr-1"></i> សេចក្តីជូនដំណឹង</h3>
+            <p class="text-[11px] text-zinc-300">សូមស្វាគមន៍មកកាន់ Angkor DC! បញ្ចូលប្រាក់តាម ABA PayWay ដើម្បីទស្សនាភាពយន្ត។</p>
+        </div>
+    </div>
+
+    <div id="profile-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-xs rounded-2xl p-4 shadow-2xl relative text-center">
+            <button onclick="closeProfile()" class="absolute top-3 right-3 text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            <h3 id="profile-name-text" class="text-sm font-bold text-white mb-1">User</h3>
+            <p id="profile-phone-text" class="text-[11px] text-zinc-400 mb-3">+855...</p>
+            <button onclick="closeProfile(); switchTab('wallet');" class="w-full bg-amber-500 text-black font-bold py-2 rounded-xl text-xs">គ្រប់គ្រងកាបូបលុយ</button>
+        </div>
+    </div>
+
     <!-- SCRIPT FOR CLIENT -->
     <script>
         let currentUser = null;
@@ -123,7 +166,7 @@
         let purchasedMovies = [];
         let currentActiveMovie = null;
 
-        const moviesData = [
+        let moviesData = JSON.parse(localStorage.getItem('angkor_movies') || 'null') || [
             { id: 1, title: "UNDER THE CREEK", category: "New Release", price: 1.60, image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=400&q=80" },
             { id: 2, title: "KTV: KILLING TIME", category: "New Release", price: 1.60, image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=400&q=80" },
             { id: 3, title: "LOVE MISSION", category: "New Release", price: 1.60, image: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=400&q=80" }
@@ -137,10 +180,11 @@
             currentUser = { phone, name };
             localStorage.setItem('angkor_current_user', JSON.stringify(currentUser));
             
-            // Save to registered users list for admin simulation via localStorage
             let allUsers = JSON.parse(localStorage.getItem('angkor_users') || '[]');
-            allUsers.push({ phone, name, balance: 0.00, joinedDate: new Date().toLocaleDateString() });
-            localStorage.setItem('angkor_users', JSON.stringify(allUsers));
+            if(!allUsers.some(u => u.phone === phone)) {
+                allUsers.push({ phone, name, balance: 0.00, joinedDate: new Date().toLocaleDateString() });
+                localStorage.setItem('angkor_users', JSON.stringify(allUsers));
+            }
 
             document.getElementById('register-modal').classList.add('hidden');
             document.getElementById('client-app-container').classList.remove('hidden');
@@ -158,22 +202,116 @@
         });
 
         function initClientApp() {
-            renderNewReleases();
-            renderAllMovies('All');
+            renderMovies();
+            renderLibrary();
+            renderTransactions();
+            document.getElementById('wallet-balance-display').innerText = `$${userBalance.toFixed(2)}`;
         }
 
-        function renderNewReleases() {
-            document.getElementById('new-release-container').innerHTML = moviesData.map(m => `
-                <div onclick="alert('សូមជ្រើសរើសទស្សនា')" class="min-w-[100px] w-[100px] cursor-pointer group flex-shrink-0">
+        function renderMovies() {
+            const html = moviesData.map(m => `
+                <div onclick="watchMovie('${m.title}', ${m.price})" class="min-w-[100px] w-[100px] cursor-pointer group flex-shrink-0">
                     <div class="h-[140px] rounded-xl overflow-hidden bg-zinc-800"><img src="${m.image}" class="w-full h-full object-cover"></div>
                     <p class="text-[11px] font-semibold mt-1 truncate text-zinc-200">${m.title}</p>
                 </div>
             `).join('');
+            document.getElementById('new-release-container').innerHTML = html;
+            document.getElementById('all-movies-grid').innerHTML = html;
         }
-        function renderAllMovies() {}
-        function switchTab(t) {}
-        function openNotifications() {}
-        function openProfile() {}
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-amber-500');
+                btn.classList.add('text-zinc-400');
+                if(btn.getAttribute('data-tab') === tabId) {
+                    btn.classList.remove('text-zinc-400');
+                    btn.classList.add('text-amber-500');
+                }
+            });
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function watchMovie(title, price) {
+            currentActiveMovie = { title, price };
+            document.getElementById('modal-movie-title').innerText = title;
+            document.getElementById('movie-price-tag').innerText = `$${price.toFixed(2)}`;
+            
+            const isUnlocked = purchasedMovies.includes(title);
+            const lockedOverlay = document.getElementById('locked-overlay');
+            const videoPlayer = document.getElementById('movie-video-player');
+
+            if (isUnlocked) {
+                lockedOverlay.classList.add('hidden');
+                videoPlayer.classList.remove('hidden');
+                videoPlayer.play();
+            } else {
+                lockedOverlay.classList.remove('hidden');
+                videoPlayer.classList.add('hidden');
+                videoPlayer.pause();
+            }
+            document.getElementById('movie-modal').classList.remove('hidden');
+        }
+
+        function closeMovieModal() {
+            document.getElementById('movie-modal').classList.add('hidden');
+            document.getElementById('movie-video-player').pause();
+        }
+
+        function unlockMovie() {
+            if (userBalance < currentActiveMovie.price) {
+                closeMovieModal();
+                alert('ទឹកប្រាក់ក្នុងកាបូបរបស់អ្នកមិនគ្រប់គ្រាន់ទេ! សូមធ្វើការ Top Up តាម ABA PayWay សិន។');
+                switchTab('wallet');
+                return;
+            }
+
+            userBalance -= currentActiveMovie.price;
+            purchasedMovies.push(currentActiveMovie.title);
+            transactions.unshift({ id: 'ADC-' + Math.floor(100000 + Math.random() * 900000), date: new Date().toLocaleDateString(), amount: currentActiveMovie.price, title: currentActiveMovie.title });
+
+            document.getElementById('wallet-balance-display').innerText = `$${userBalance.toFixed(2)}`;
+            renderTransactions();
+            renderLibrary();
+
+            document.getElementById('locked-overlay').classList.add('hidden');
+            const videoPlayer = document.getElementById('movie-video-player');
+            videoPlayer.classList.remove('hidden');
+            videoPlayer.play();
+        }
+
+        function renderLibrary() {
+            const libraryGrid = document.getElementById('library-grid');
+            if (purchasedMovies.length === 0) {
+                libraryGrid.innerHTML = '<p class="col-span-3 text-center text-xs text-zinc-500 py-10">មិនទាន់មានភាពយន្តបានទិញ</p>';
+                return;
+            }
+            libraryGrid.innerHTML = purchasedMovies.map(title => {
+                const movie = moviesData.find(m => m.title === title) || moviesData[0];
+                return `<div onclick="watchMovie('${movie.title}', 0)" class="cursor-pointer"><div class="h-[140px] rounded-xl overflow-hidden bg-zinc-800"><img src="${movie.image}" class="w-full h-full object-cover"></div><p class="text-[11px] font-semibold mt-1 truncate">${movie.title}</p></div>`;
+            }).join('');
+        }
+
+        function renderTransactions() {
+            const list = document.getElementById('transaction-list');
+            if (transactions.length === 0) {
+                list.innerHTML = '<p class="text-center text-xs text-zinc-500 py-4">មិនទាន់មានប្រតិបត្តិការ</p>';
+                return;
+            }
+            list.innerHTML = transactions.map(tx => `<div class="bg-zinc-900 p-3 rounded-xl flex justify-between text-xs"><span>${tx.title}</span><span class="text-red-400">-$${tx.amount.toFixed(2)}</span></div>`).join('');
+        }
+
+        function openNotifications() { document.getElementById('notif-modal').classList.remove('hidden'); }
+        function closeNotifications() { document.getElementById('notif-modal').classList.add('hidden'); }
+        function openProfile() { 
+            if(currentUser) {
+                document.getElementById('profile-name-text').innerText = currentUser.name;
+                document.getElementById('profile-phone-text').innerText = currentUser.phone;
+            }
+            document.getElementById('profile-modal').classList.remove('hidden'); 
+        }
+        function closeProfile() { document.getElementById('profile-modal').classList.add('hidden'); }
     </script>
 </body>
 </html>
