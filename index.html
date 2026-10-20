@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angkor DC - Streaming & Movies</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #0b0b0b; color: #ffffff; font-family: 'Battambang', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        .phone-frame { max-width: 420px; margin: 0 auto; min-height: 100vh; background-color: #121212; position: relative; box-shadow: 0 0 40px rgba(0,0,0,0.8); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-[#0b0b0b] text-white">
+
+    <!-- REGISTRATION MODAL FOR NEW GUESTS -->
+    <div id="register-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-xs rounded-2xl p-5 shadow-2xl text-center">
+            <span class="text-amber-500 text-3xl mb-2 inline-block"><i class="fa-solid fa-play"></i></span>
+            <h3 class="text-base font-bold text-white mb-1">ស្វាគមន៍មកកាន់ Angkor DC</h3>
+            <p class="text-[11px] text-zinc-400 mb-4">សូមបញ្ចូលលេខទូរសព្ទរបស់អ្នកដើម្បីចុះឈ្មោះចូលទស្សនា</p>
+            <form onsubmit="handleRegister(event)" class="space-y-3 text-left">
+                <div>
+                    <label class="block text-[11px] text-zinc-400 mb-1">លេខទូរសព្ទដៃ</label>
+                    <input type="tel" id="reg-phone" required placeholder="ឧ. 012 345 678" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] text-zinc-400 mb-1">ឈ្មោះរបស់អ្នក</label>
+                    <input type="text" id="reg-name" required placeholder="ឧ. Mon Samnang" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-amber-500">
+                </div>
+                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold py-2.5 rounded-xl text-xs transition shadow">
+                    ចុះឈ្មោះចូលមើល
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN CLIENT APP -->
+    <div class="phone-frame pb-24 hidden" id="client-app-container">
+        <header class="sticky top-0 z-50 bg-[#121212]/95 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-zinc-800">
+            <div class="flex items-center space-x-2">
+                <span class="text-amber-500 text-xl"><i class="fa-solid fa-play"></i></span>
+                <h1 class="text-lg font-bold tracking-wider text-white">Angkor <span class="text-amber-500">DC</span></h1>
+            </div>
+            <div class="flex items-center space-x-4 text-zinc-300">
+                <button onclick="switchTab('all')" class="hover:text-amber-500 transition"><i class="fa-solid fa-magnifying-glass text-base"></i></button>
+                <button onclick="openNotifications()" class="hover:text-amber-500 transition"><i class="fa-regular fa-bell text-base"></i></button>
+                <button onclick="openProfile()" class="hover:text-amber-500 transition"><i class="fa-regular fa-user text-base"></i></button>
+            </div>
+        </header>
+
+        <main>
+            <!-- HOME TAB -->
+            <section id="tab-home" class="tab-content">
+                <div class="relative w-full h-[380px] bg-zinc-900 overflow-hidden">
+                    <div id="hero-slider" class="flex transition-transform duration-500 ease-out h-full">
+                        <div class="min-w-full h-full relative flex-shrink-0">
+                            <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover opacity-70" alt="Under The Creek">
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent"></div>
+                            <div class="absolute bottom-6 left-0 right-0 text-center px-4">
+                                <h3 class="text-xl font-bold mb-3 text-white">UNDER THE CREEK</h3>
+                                <button onclick="watchMovie('UNDER THE CREEK', 1.60)" class="bg-amber-500 hover:bg-amber-400 text-black font-bold px-7 py-2 rounded-full shadow-lg transition text-sm">
+                                    <i class="fa-solid fa-play mr-2"></i> Watch Movie
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 px-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-sm text-zinc-100">New Release</h3>
+                        <span class="text-xs text-amber-500 cursor-pointer" onclick="switchTab('all')">See all <i class="fa-solid fa-chevron-right text-[10px]"></i></span>
+                    </div>
+                    <div class="flex space-x-3 overflow-x-auto no-scrollbar pb-2" id="new-release-container"></div>
+                </div>
+            </section>
+
+            <!-- ALL MOVIES TAB -->
+            <section id="tab-all" class="tab-content hidden px-4 py-4">
+                <h2 class="text-lg font-bold mb-4">All Movies</h2>
+                <div id="all-movies-grid" class="grid grid-cols-3 gap-2.5"></div>
+            </section>
+
+            <!-- WALLET TAB -->
+            <section id="tab-wallet" class="tab-content hidden px-4 py-4">
+                <h2 class="text-lg font-bold mb-4">My Wallet</h2>
+                <div class="bg-gradient-to-br from-zinc-900 to-zinc-800 p-4 rounded-2xl border border-zinc-700 shadow-xl mb-5 flex items-center justify-between">
+                    <div>
+                        <p class="text-[11px] text-zinc-400 mb-1">Available Balance</p>
+                        <h3 id="wallet-balance-display" class="text-2xl font-extrabold text-amber-400">$0.00</h3>
+                    </div>
+                    <a href="https://link.payway.com.kh/ABAPAYuN526009h" target="_blank" class="bg-amber-500 hover:bg-amber-400 text-black font-bold px-4 py-2 rounded-xl shadow transition text-xs flex items-center">
+                        <i class="fa-solid fa-wallet mr-1"></i> Top Up
+                    </a>
+                </div>
+                <h3 class="font-bold text-xs text-zinc-300 mb-3">Transaction History</h3>
+                <div id="transaction-list" class="space-y-2.5"></div>
+            </section>
+
+            <!-- LIBRARY TAB -->
+            <section id="tab-library" class="tab-content hidden px-4 py-4">
+                <h2 class="text-lg font-bold mb-4">My Library (Purchased)</h2>
+                <div id="library-grid" class="grid grid-cols-3 gap-2.5"></div>
+            </section>
+        </main>
+
+        <nav class="absolute bottom-0 left-0 right-0 bg-[#121212]/95 backdrop-blur-md border-t border-zinc-800 py-2 px-6 flex justify-between items-center z-40">
+            <button onclick="switchTab('home')" class="nav-btn flex flex-col items-center text-amber-500" data-tab="home"><i class="fa-solid fa-house text-base"></i><span class="text-[9px] mt-1 font-medium">Home</span></button>
+            <button onclick="switchTab('all')" class="nav-btn flex flex-col items-center text-zinc-400 hover:text-amber-500 transition" data-tab="all"><i class="fa-solid fa-clapperboard text-base"></i><span class="text-[9px] mt-1 font-medium">All Movies</span></button>
+            <button onclick="switchTab('wallet')" class="nav-btn flex flex-col items-center text-zinc-400 hover:text-amber-500 transition" data-tab="wallet"><i class="fa-solid fa-wallet text-base"></i><span class="text-[9px] mt-1 font-medium">Wallet</span></button>
+            <button onclick="switchTab('library')" class="nav-btn flex flex-col items-center text-zinc-400 hover:text-amber-500 transition" data-tab="library"><i class="fa-solid fa-bookmark text-base"></i><span class="text-[9px] mt-1 font-medium">Library</span></button>
+        </nav>
+    </div>
+
+    <!-- SCRIPT FOR CLIENT -->
+    <script>
+        let currentUser = null;
+        let userBalance = 0.00;
+        let transactions = [];
+        let purchasedMovies = [];
+        let currentActiveMovie = null;
+
+        const moviesData = [
+            { id: 1, title: "UNDER THE CREEK", category: "New Release", price: 1.60, image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=400&q=80" },
+            { id: 2, title: "KTV: KILLING TIME", category: "New Release", price: 1.60, image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=400&q=80" },
+            { id: 3, title: "LOVE MISSION", category: "New Release", price: 1.60, image: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=400&q=80" }
+        ];
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const phone = document.getElementById('reg-phone').value;
+            const name = document.getElementById('reg-name').value;
+            
+            currentUser = { phone, name };
+            localStorage.setItem('angkor_current_user', JSON.stringify(currentUser));
+            
+            // Save to registered users list for admin simulation via localStorage
+            let allUsers = JSON.parse(localStorage.getItem('angkor_users') || '[]');
+            allUsers.push({ phone, name, balance: 0.00, joinedDate: new Date().toLocaleDateString() });
+            localStorage.setItem('angkor_users', JSON.stringify(allUsers));
+
+            document.getElementById('register-modal').classList.add('hidden');
+            document.getElementById('client-app-container').classList.remove('hidden');
+            initClientApp();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('angkor_current_user');
+            if (saved) {
+                currentUser = JSON.parse(saved);
+                document.getElementById('register-modal').classList.add('hidden');
+                document.getElementById('client-app-container').classList.remove('hidden');
+                initClientApp();
+            }
+        });
+
+        function initClientApp() {
+            renderNewReleases();
+            renderAllMovies('All');
+        }
+
+        function renderNewReleases() {
+            document.getElementById('new-release-container').innerHTML = moviesData.map(m => `
+                <div onclick="alert('សូមជ្រើសរើសទស្សនា')" class="min-w-[100px] w-[100px] cursor-pointer group flex-shrink-0">
+                    <div class="h-[140px] rounded-xl overflow-hidden bg-zinc-800"><img src="${m.image}" class="w-full h-full object-cover"></div>
+                    <p class="text-[11px] font-semibold mt-1 truncate text-zinc-200">${m.title}</p>
+                </div>
+            `).join('');
+        }
+        function renderAllMovies() {}
+        function switchTab(t) {}
+        function openNotifications() {}
+        function openProfile() {}
+    </script>
+</body>
+</html>
