@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Angkor DC - Streaming & Movies</title>
+    <title>Angkor DC - ភ្ញៀវ / អតិថិជន</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -15,12 +15,12 @@
 </head>
 <body class="bg-[#0b0b0b] text-white">
 
-    <!-- REGISTRATION MODAL FOR NEW GUESTS -->
-    <div id="register-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+    <!-- REGISTRATION MODAL FOR GUESTS -->
+    <div id="register-modal" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-zinc-900 border border-zinc-800 w-full max-w-xs rounded-2xl p-5 shadow-2xl text-center">
             <span class="text-amber-500 text-3xl mb-2 inline-block"><i class="fa-solid fa-play"></i></span>
             <h3 class="text-base font-bold text-white mb-1">ស្វាគមន៍មកកាន់ Angkor DC</h3>
-            <p class="text-[11px] text-zinc-400 mb-4">សូមបញ្ចូលលេខទូរសព្ទរបស់អ្នកដើម្បីចុះឈ្មោះចូលទស្សនា</p>
+            <p class="text-[11px] text-zinc-400 mb-4">សូមចុះឈ្មោះចូលទស្សនាដោយប្រើលេខទូរសព្ទរបស់អ្នក</p>
             <form onsubmit="handleRegister(event)" class="space-y-3 text-left">
                 <div>
                     <label class="block text-[11px] text-zinc-400 mb-1">លេខទូរសព្ទដៃ</label>
@@ -39,6 +39,7 @@
 
     <!-- MAIN CLIENT APP -->
     <div class="phone-frame pb-24 hidden" id="client-app-container">
+        <!-- TOP HEADER -->
         <header class="sticky top-0 z-50 bg-[#121212]/95 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-zinc-800">
             <div class="flex items-center space-x-2">
                 <span class="text-amber-500 text-xl"><i class="fa-solid fa-play"></i></span>
@@ -71,10 +72,10 @@
 
                 <div class="mt-4 px-4">
                     <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-bold text-sm text-zinc-100">New Release</h3>
+                        <h3 class="font-bold text-sm text-zinc-100">New Release & All Movies</h3>
                         <span class="text-xs text-amber-500 cursor-pointer" onclick="switchTab('all')">See all <i class="fa-solid fa-chevron-right text-[10px]"></i></span>
                     </div>
-                    <div class="flex space-x-3 overflow-x-auto no-scrollbar pb-2" id="new-release-container"></div>
+                    <div class="flex space-x-3 overflow-x-auto no-scrollbar pb-2" id="client-movie-row"></div>
                 </div>
             </section>
 
@@ -107,6 +108,7 @@
             </section>
         </main>
 
+        <!-- BOTTOM NAVIGATION -->
         <nav class="absolute bottom-0 left-0 right-0 bg-[#121212]/95 backdrop-blur-md border-t border-zinc-800 py-2 px-6 flex justify-between items-center z-40">
             <button onclick="switchTab('home')" class="nav-btn flex flex-col items-center text-amber-500" data-tab="home"><i class="fa-solid fa-house text-base"></i><span class="text-[9px] mt-1 font-medium">Home</span></button>
             <button onclick="switchTab('all')" class="nav-btn flex flex-col items-center text-zinc-400 hover:text-amber-500 transition" data-tab="all"><i class="fa-solid fa-clapperboard text-base"></i><span class="text-[9px] mt-1 font-medium">All Movies</span></button>
@@ -158,7 +160,6 @@
         </div>
     </div>
 
-    <!-- SCRIPT FOR CLIENT -->
     <script>
         let currentUser = null;
         let userBalance = 0.00;
@@ -172,6 +173,18 @@
             { id: 3, title: "LOVE MISSION", category: "New Release", price: 1.60, image: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=400&q=80" }
         ];
 
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('angkor_current_user');
+            if (saved) {
+                currentUser = JSON.parse(saved);
+                document.getElementById('register-modal').classList.add('hidden');
+                document.getElementById('client-app-container').classList.remove('hidden');
+                refreshClientApp();
+            } else {
+                document.getElementById('register-modal').classList.remove('hidden');
+            }
+        });
+
         function handleRegister(e) {
             e.preventDefault();
             const phone = document.getElementById('reg-phone').value;
@@ -180,42 +193,32 @@
             currentUser = { phone, name };
             localStorage.setItem('angkor_current_user', JSON.stringify(currentUser));
             
-            let allUsers = JSON.parse(localStorage.getItem('angkor_users') || '[]');
-            if(!allUsers.some(u => u.phone === phone)) {
-                allUsers.push({ phone, name, balance: 0.00, joinedDate: new Date().toLocaleDateString() });
-                localStorage.setItem('angkor_users', JSON.stringify(allUsers));
+            let registeredUsers = JSON.parse(localStorage.getItem('angkor_users') || '[]');
+            if(!registeredUsers.some(u => u.phone === phone)) {
+                registeredUsers.push({ phone, name, balance: 0.00, joinedDate: new Date().toLocaleDateString() });
+                localStorage.setItem('angkor_users', JSON.stringify(registeredUsers));
             }
 
             document.getElementById('register-modal').classList.add('hidden');
             document.getElementById('client-app-container').classList.remove('hidden');
-            initClientApp();
+            refreshClientApp();
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            const saved = localStorage.getItem('angkor_current_user');
-            if (saved) {
-                currentUser = JSON.parse(saved);
-                document.getElementById('register-modal').classList.add('hidden');
-                document.getElementById('client-app-container').classList.remove('hidden');
-                initClientApp();
-            }
-        });
-
-        function initClientApp() {
-            renderMovies();
+        function refreshClientApp() {
+            renderClientMovies();
             renderLibrary();
             renderTransactions();
             document.getElementById('wallet-balance-display').innerText = `$${userBalance.toFixed(2)}`;
         }
 
-        function renderMovies() {
+        function renderClientMovies() {
             const html = moviesData.map(m => `
                 <div onclick="watchMovie('${m.title}', ${m.price})" class="min-w-[100px] w-[100px] cursor-pointer group flex-shrink-0">
                     <div class="h-[140px] rounded-xl overflow-hidden bg-zinc-800"><img src="${m.image}" class="w-full h-full object-cover"></div>
                     <p class="text-[11px] font-semibold mt-1 truncate text-zinc-200">${m.title}</p>
                 </div>
             `).join('');
-            document.getElementById('new-release-container').innerHTML = html;
+            document.getElementById('client-movie-row').innerHTML = html;
             document.getElementById('all-movies-grid').innerHTML = html;
         }
 
