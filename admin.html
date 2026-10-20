@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angkor DC - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #0b0b0b; color: #ffffff; font-family: 'Battambang', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        .admin-frame { max-width: 480px; margin: 0 auto; min-height: 100vh; background-color: #121212; position: relative; box-shadow: 0 0 40px rgba(0,0,0,0.8); }
+    </style>
+</head>
+<body class="bg-[#0b0b0b] text-white">
+
+    <div class="admin-frame pb-24">
+        <header class="sticky top-0 z-50 bg-[#121212]/95 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-zinc-800">
+            <div class="flex items-center space-x-2">
+                <span class="text-amber-500 text-xl"><i class="fa-solid fa-gauge-high"></i></span>
+                <h1 class="text-lg font-bold tracking-wider text-white">Admin <span class="text-amber-500">Dashboard</span></h1>
+            </div>
+            <span class="text-xs bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full font-semibold border border-amber-500/30">Administrator</span>
+        </header>
+
+        <main class="p-4 space-y-5">
+            <!-- STATS -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-zinc-900 border border-zinc-800 p-3 rounded-2xl text-center">
+                    <p class="text-[10px] text-zinc-400 mb-1">ចំនួនអ្នកចុះឈ្មោះសរុប</p>
+                    <h3 id="stat-users-count" class="text-xl font-extrabold text-blue-400">0 នាក់</h3>
+                </div>
+                <div class="bg-zinc-900 border border-zinc-800 p-3 rounded-2xl text-center">
+                    <p class="text-[10px] text-zinc-400 mb-1">ភាពយន្តសរុប</p>
+                    <h3 id="stat-movies" class="text-xl font-extrabold text-emerald-400">0</h3>
+                </div>
+            </div>
+
+            <!-- MOVIE MANAGEMENT -->
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-sm font-bold text-zinc-200">គ្រប់គ្រងភាពយន្ត</h2>
+                    <button onclick="openAddMovieModal()" class="bg-amber-500 hover:bg-amber-400 text-black font-bold px-3 py-1.5 rounded-xl text-xs transition shadow flex items-center">
+                        <i class="fa-solid fa-plus mr-1"></i> បន្ថែមភាពយន្ត
+                    </button>
+                </div>
+                <div id="admin-movie-list" class="space-y-2.5"></div>
+            </div>
+
+            <!-- REGISTERED USERS BY PHONE NUMBER -->
+            <div class="pt-2">
+                <h2 class="text-sm font-bold text-zinc-200 mb-3">អតិថិជនចុះឈ្មោះតាមលេខទូរសព្ទ</h2>
+                <div id="admin-users-list" class="space-y-2.5"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ADD MOVIE MODAL -->
+    <div id="movie-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-xs rounded-2xl p-4 shadow-2xl relative">
+            <button onclick="closeAddMovieModal()" class="absolute top-3 right-3 text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-sm font-bold mb-3 text-amber-500">បន្ថែមភាពយន្តថ្មី</h3>
+            <form onsubmit="saveMovie(event)" class="space-y-3">
+                <div>
+                    <label class="block text-[11px] text-zinc-400 mb-1">ឈ្មោះរឿង (Title)</label>
+                    <input type="text" id="input-title" required class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white text-xs">
+                </div>
+                <div>
+                    <label class="block text-[11px] text-zinc-400 mb-1">តម្លៃ ($)</label>
+                    <input type="number" id="input-price" step="0.1" value="1.60" required class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white text-xs">
+                </div>
+                <div>
+                    <label class="block text-[11px] text-zinc-400 mb-1">តំណរូបភាព (Image URL)</label>
+                    <input type="url" id="input-image" required class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white text-xs">
+                </div>
+                <button type="submit" class="w-full bg-amber-500 text-black font-bold py-2 rounded-xl text-xs">រក្សាទុក</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPT FOR ADMIN -->
+    <script>
+        let adminMovies = JSON.parse(localStorage.getItem('angkor_movies') || '[]');
+        let registeredUsers = JSON.parse(localStorage.getItem('angkor_users') || '[{"phone":"012345678","name":"Mon Samnang","joinedDate":"20/10/2026"}]');
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderAdminMovies();
+            renderAdminUsers();
+        });
+
+        function renderAdminMovies() {
+            document.getElementById('admin-movie-list').innerHTML = adminMovies.map((m, i) => `
+                <div class="bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <img src="${m.image}" class="w-10 h-14 object-cover rounded-lg">
+                        <div>
+                            <p class="text-xs font-bold text-white">${m.title}</p>
+                            <p class="text-[10px] text-amber-400">$${m.price.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <button onclick="deleteMovie(${i})" class="text-red-400 text-xs px-2 py-1"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `).join('');
+            document.getElementById('stat-movies').innerText = adminMovies.length;
+        }
+
+        function renderAdminUsers() {
+            document.getElementById('admin-users-list').innerHTML = registeredUsers.map((u, i) => `
+                <div class="bg-zinc-900 border border-zinc-800 p-3 rounded-xl flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-white"><i class="fa-solid fa-phone text-[10px] mr-1 text-zinc-400"></i> ${u.phone}</p>
+                        <p class="text-[10px] text-zinc-400">ឈ្មោះ: ${u.name}</p>
+                    </div>
+                    <span class="text-[10px] text-zinc-500">${u.joinedDate}</span>
+                </div>
+            `).join('');
+            document.getElementById('stat-users-count').innerText = `${registeredUsers.length} នាក់`;
+        }
+
+        function openAddMovieModal() { document.getElementById('movie-modal').classList.remove('hidden'); }
+        function closeAddMovieModal() { document.getElementById('movie-modal').classList.add('hidden'); }
+
+        function saveMovie(e) {
+            e.preventDefault();
+            const title = document.getElementById('input-title').value;
+            const price = parseFloat(document.getElementById('input-price').value);
+            const image = document.getElementById('input-image').value;
+
+            adminMovies.push({ title, price, image });
+            localStorage.setItem('angkor_movies', JSON.stringify(adminMovies));
+            closeAddMovieModal();
+            renderAdminMovies();
+        }
+
+        function deleteMovie(index) {
+            adminMovies.splice(index, 1);
+            localStorage.setItem('angkor_movies', JSON.stringify(adminMovies));
+            renderAdminMovies();
+        }
+    </script>
+</body>
+</html>
